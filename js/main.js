@@ -1,6 +1,8 @@
 const HEIGHT = 0
 const WIDTH = 0
 
+console.log(d3.version)
+
 const artistsData = d3.csv('data/ArtistProcessed.csv', parseArtists)
 const categoriesData = d3.csv('data/CategoryProcessed.csv', parseCategory)
 

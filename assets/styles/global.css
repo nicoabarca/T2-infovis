@@ -1,0 +1,27 @@
+:root {
+    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    --orange: #e27d60;
+    --pastelorange: #e8a87c;
+    --lightblue: #85dcbb;
+    --brushviolet: #c38d9e;
+    --greenmarine: #36a882;
+}
+
+
+body {
+    background-color: var(--greenmarine);
+    color: whitesmoke;
+    margin: 0;
+    display: flex;
+    place-items: center;
+    min-width: 320px;
+    min-height: 50vh;
+}
+
+#app {
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    place-items: center;
+    text-align: center;
+}
