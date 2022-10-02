@@ -18,10 +18,8 @@ function parseArtists(d) {
     age: +this.deathYear - +this.birthYear
   }
 
-  data['age'] = data['deathYear'] != -1
-    ? data['deathYear'] - data['birthYear']
-    : new Date().getFullYear() - data['birthYear']
-
+  data['age'] = calculateAge(data['birthYear'], data['deathYear'])
+  console.log(data)
   return data
 }
 
@@ -34,5 +32,12 @@ function parseCategory(d) {
     female: +d.Female
   }
   return data
+}
+
+function calculateAge(birthYear, deathYear) {
+  if (deathYear === -1) {
+    return new Date().getFullYear() - birthYear
+  }
+  return deathYear - birthYear
 }
 
