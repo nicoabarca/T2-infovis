@@ -1,10 +1,52 @@
-const HEIGHT = 0
-const WIDTH = 0
+const WIDTH = 1000;
+const HEIGHT = 500;
+const MARGIN = {
+  top: 70,
+  bottom: 70,
+  right: 30,
+  left: 70, // se agranda este margen para asegurar que se vean los números
+};
 
-console.log(d3.version)
+const categoriesContainer = d3.select('#categories')
+  .append('svg')
+  //.attr('viewBox', `0 0 ${100} ${100}`)
+  .attr('height', HEIGHT)
+  .attr('width', WIDTH)
 
-const artistsData = d3.csv('data/ArtistProcessed.csv', parseArtists)
-const categoriesData = d3.csv('data/CategoryProcessed.csv', parseCategory)
+
+function categoriesDataJoin(data) {
+  // Define scales
+  const categoryArtistScale = d3.scaleBand()
+    
+
+  // Data join
+  const enterAndUpdate = categoriesContainer
+    .selectAll('g')
+    .data(data, d => d.category)
+    .join(
+      enter => {
+        const group = enter.append('g')
+
+        group.append('rect')
+          .attr('fill', 'orange')
+          .attr('width', (d) => {
+            return d.artist
+          })
+          .attr('height', '20px')
+          .attr('x', (_, i) => i * 100)
+          .attr('y', `${HEIGHT / 2}`)
+
+        group.append('rect')
+          .attr('fill', 'red')
+          .attr('width', '10px')
+          .attr('height', '10px')
+          .attr('x', (_, i) => i * 100)
+          .attr('y', `${HEIGHT / 2}`)
+
+      }
+    )
+
+}
 
 function parseArtists(d) {
   data = {
@@ -19,7 +61,6 @@ function parseArtists(d) {
   }
 
   data['age'] = calculateAge(data['birthYear'], data['deathYear'])
-  console.log(data)
   return data
 }
 
@@ -31,6 +72,8 @@ function parseCategory(d) {
     male: +d.Male,
     female: +d.Female
   }
+
+  console.log(data)
   return data
 }
 
@@ -41,3 +84,15 @@ function calculateAge(birthYear, deathYear) {
   return deathYear - birthYear
 }
 
+function main() {
+  const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/'
+  const CATEGORY_URL = BASE_URL + 'CategoryProcessed.csv'
+  const ARTISTS_URL = BASE_URL + 'ArtistProcessed.csv'
+
+  d3.csv(CATEGORY_URL, parseCategory).then(data => {
+    finalData = JSON.parse(JSON.stringify(data))
+    categoriesDataJoin(finalData)
+  })
+}
+
+main()
