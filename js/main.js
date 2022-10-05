@@ -2,6 +2,7 @@ const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
+const artistsContainer = d3.select('#artists')
 const maleBtn = d3.select('#male-btn')
 const femaleBtn = d3.select('#female-btn')
 const resetBtn = d3.select('#reset-btn')
@@ -31,7 +32,8 @@ function categoriesDataJoin(data) {
     .range(d3.schemeSet2)
 
   // Data join
-  const enterAndUpdate = categoriesContainer
+  //const enterAndUpdate = 
+  categoriesContainer
     .selectAll('svg')
     .data(data, d => d.category)
     .join(
@@ -104,13 +106,30 @@ function categoriesDataJoin(data) {
           .style("text-anchor", "middle")
 
         categorySvg.on('mouseover', (e, d) => categoryMouseover(e, d))
+
         categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
-        categorySvg.on('click', (e, d) => {
+
+        categorySvg.on('click', (_, d) => {
           categorySvg.attr('opacity', (data) => {
             return data.category === d.category ? 1 : 0.7
           })
         }
         )
+      }
+    )
+}
+
+//TODO
+function artistsDataJoin(data, selectedCategory) {
+  const artistsData = data.filter(d => d.category === selectedCategory)
+  console.log(artistsData)
+  artistsContainer
+    .selectAll('g')
+    .data(array)
+    .join(
+      enter => {
+        const artistGroup = enter.append('g')
+
       }
     )
 }
@@ -153,7 +172,6 @@ function parseArtists(d) {
     data['age'] = data['deathYear'] - data['birthYear']
   }
 
-  console.log(data)
   return data
 }
 
@@ -176,8 +194,8 @@ function main() {
 
 
   d3.csv(CATEGORY_URL, parseCategory).then(data => {
-    finalData = JSON.parse(JSON.stringify(data))
-    categoriesDataJoin(finalData)
+    categoryFinalData = JSON.parse(JSON.stringify(data))
+    categoriesDataJoin(categoryFinalData)
   })
 
   d3.csv(ARTISTS_URL, parseArtists)
