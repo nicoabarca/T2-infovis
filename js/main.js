@@ -1,30 +1,44 @@
 const CATEGORY_WIDTH = 200
-const CATEGORY_HEIGHT = 270
+const CATEGORY_HEIGHT = 300
 
 function categoriesDataJoin(data) {
 
   const categoriesContainer = d3.select('#categories')
 
-  const frameWidthScale = d3
-    .scaleLinear()
-    .domain([0, d3.max(data, d => d.artist)])
-    .range([CATEGORY_WIDTH - 110, CATEGORY_WIDTH - 10])
+  // TODO: artist genre stackbar
+  let genreStackGen = d3.stack().keys(['male', 'female'])
+  let genreStackData = genreStackGen(data)
 
-  const frameHeightScale = d3
+  const frameScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artist)])
-    .range([140, CATEGORY_HEIGHT - 30])
+    .range([15, 50])
 
   const paspartuWidthScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artwork)])
-    .range([70, CATEGORY_WIDTH - 40])
+    .range([CATEGORY_WIDTH - 100, CATEGORY_WIDTH - 60])
 
   const paspartuHeightScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artwork)])
-    .range([120, CATEGORY_HEIGHT - 60])
+    .range([CATEGORY_HEIGHT - 120, CATEGORY_HEIGHT - 80])
 
+  const artistGenreColor = d3
+    .scaleOrdinal()
+    .domain(['male', 'female'])
+    .range(['green', 'orange'])
+
+
+  const artistGenreScale = d3
+    .scaleLinear()
+    .domain([0, 10])
+    .range([0, 90])
+
+  const categoryColor = d3
+    .scaleOrdinal()
+    .domain(data.map(d => d.category))
+    .range(d3.schemeSet2)
 
   // Data join
   const enterAndUpdate = categoriesContainer
@@ -52,19 +66,33 @@ function categoriesDataJoin(data) {
 
         //Category frame
         group.append('rect')
-          .attr('x', d => (CATEGORY_WIDTH / 2) - (frameWidthScale(d.artist) / 2))
-          .attr('y', d => (CATEGORY_HEIGHT / 2) - (frameHeightScale(d.artist) / 2) + 10)
-          .attr('width', d => frameWidthScale(d.artist))
-          .attr('height', d => frameHeightScale(d.artist))
-          .attr('fill', 'red')
+          .attr('fill', d => categoryColor(d.category))
+          .attr('x', d => (CATEGORY_WIDTH / 2) - ((paspartuWidthScale(d.artwork) + frameScale(d.artist)) / 2))
+          .attr('y', d => (CATEGORY_HEIGHT / 2) - ((paspartuHeightScale(d.artwork) + frameScale(d.artist)) / 2) + 10)
+          .attr('width', d => paspartuWidthScale(d.artwork) + frameScale(d.artist))
+          .attr('height', d => paspartuHeightScale(d.artwork) + frameScale(d.artist))
 
         //Category paspartu
         group.append('rect')
           .attr('fill', 'white')
+          .attr('stroke', 'black')
           .attr('x', d => (CATEGORY_WIDTH / 2) - (paspartuWidthScale(d.artwork) / 2))
           .attr('y', d => (CATEGORY_HEIGHT / 2) - (paspartuHeightScale(d.artwork) / 2) + 10)
           .attr('width', d => paspartuWidthScale(d.artwork))
           .attr('height', d => paspartuHeightScale(d.artwork))
+
+        group.append('rect')
+          .attr('fill', 'green')
+          .attr('x', (CATEGORY_WIDTH / 2) - 40 / 2)
+          .attr('y', (CATEGORY_HEIGHT / 2) - (90 / 2) + 10)
+          .attr('width', 40)
+          .attr('height', 90)
+        group.append('rect')
+          .attr('fill', 'orange')
+          .attr('x', (CATEGORY_WIDTH / 2) - 40 / 2)
+          .attr('y', (CATEGORY_HEIGHT / 2) - (90 / 2) + 10)
+          .attr('width', 40)
+          .attr('height', 10)
       }
     )
 }
@@ -73,15 +101,20 @@ function parseArtists(d) {
   data = {
     artist: d.Artist,
     birthYear: +d.BirthYear,
-    categories: JSON.parse(d.Categories),
-    deathYear: +d.DeathYear,
+    categories: JSON.parse(d.Categories), deathYear: +d.DeathYear,
     gender: d.Gender,
     nacionality: d.Nacionality,
     totalArtwork: d.TotalArtwork,
     age: +this.deathYear - +this.birthYear
   }
 
-  data['age'] = calculateAge(data['birthYear'], data['deathYear'])
+  if (data['deathYear'] === -1) {
+    data['age'] = new Date().getFullYear() - data['birthYear']
+  }
+  else {
+    data['age'] = data['deathYear'] - data['birthYear']
+  }
+
   return data
 }
 
@@ -105,14 +138,17 @@ function calculateAge(birthYear, deathYear) {
 }
 
 function main() {
-  const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/'
-  const CATEGORY_URL = BASE_URL + 'CategoryProcessed.csv'
-  const ARTISTS_URL = BASE_URL + 'ArtistProcessed.csv'
+  const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/'
+  const CATEGORY_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/CategoryProcessed.csv'
+  const ARTISTS_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/face46bb769c88a3e36ef3e7287eebd8c1b64773/ArtistProcessed.csv'
+
 
   d3.csv(CATEGORY_URL, parseCategory).then(data => {
     finalData = JSON.parse(JSON.stringify(data))
     categoriesDataJoin(finalData)
   })
+
+  d3.csv(ARTISTS_URL, parseArtists)
 }
 
 main()
