@@ -5,10 +5,6 @@ function categoriesDataJoin(data) {
 
   const categoriesContainer = d3.select('#categories')
 
-  // TODO: artist genre stackbar
-  let genreStackGen = d3.stack().keys(['male', 'female'])
-  let genreStackData = genreStackGen(data)
-
   const frameScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artist)])
@@ -23,17 +19,6 @@ function categoriesDataJoin(data) {
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artwork)])
     .range([CATEGORY_HEIGHT - 120, CATEGORY_HEIGHT - 80])
-
-  const artistGenreColor = d3
-    .scaleOrdinal()
-    .domain(['male', 'female'])
-    .range(['green', 'orange'])
-
-
-  const artistGenreScale = d3
-    .scaleLinear()
-    .domain([0, 10])
-    .range([0, 90])
 
   const categoryColor = d3
     .scaleOrdinal()
@@ -75,27 +60,67 @@ function categoriesDataJoin(data) {
         //Category paspartu
         group.append('rect')
           .attr('fill', 'white')
-          .attr('stroke', 'black')
           .attr('x', d => (CATEGORY_WIDTH / 2) - (paspartuWidthScale(d.artwork) / 2))
           .attr('y', d => (CATEGORY_HEIGHT / 2) - (paspartuHeightScale(d.artwork) / 2) + 10)
           .attr('width', d => paspartuWidthScale(d.artwork))
           .attr('height', d => paspartuHeightScale(d.artwork))
 
+        // Category female-male
         group.append('rect')
           .attr('fill', 'green')
           .attr('x', (CATEGORY_WIDTH / 2) - 40 / 2)
           .attr('y', (CATEGORY_HEIGHT / 2) - (90 / 2) + 10)
           .attr('width', 40)
-          .attr('height', 90)
+          .attr('height', 100)
         group.append('rect')
           .attr('fill', 'orange')
           .attr('x', (CATEGORY_WIDTH / 2) - 40 / 2)
           .attr('y', (CATEGORY_HEIGHT / 2) - (90 / 2) + 10)
           .attr('width', 40)
-          .attr('height', 10)
+          .attr('height', d => {
+            const qty = d.female + d.male
+            return (d.female / qty).toFixed(2) * 100
+          }
+          )
+
+        // Category tooltip
+        categorySvg.append('text')
+          .attr('class', 'female')
+          .attr('x', CATEGORY_WIDTH / 2)
+          .attr('y', 100)
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .text('')
+
+        categorySvg.append('text')
+          .attr('class', 'male')
+          .attr('x', CATEGORY_WIDTH / 2)
+          .attr('y', 235)
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .text('')
+
+        categorySvg.on('mouseover', (e, d) => categoryMouseover(e, d))
+        categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
       }
     )
 }
+
+function categoryMouseover(event, d) {
+  const artistsQuantity = d.female + d.male
+
+  const femaleTooltip = d3.select(event.currentTarget).select('.female')
+  const maleTooltip = d3.select(event.currentTarget).select('.male')
+
+  femaleTooltip.text(`Female: ${(d.female / artistsQuantity).toFixed(2) * 100}%`)
+  maleTooltip.text(`Male: ${(d.male / artistsQuantity).toFixed(2) * 100}%`)
+}
+
+function categoryMouseout(event, d) {
+  d3.select(event.currentTarget).select('.female').text('')
+  d3.select(event.currentTarget).select('.male').text('')
+}
+
 
 function parseArtists(d) {
   data = {
