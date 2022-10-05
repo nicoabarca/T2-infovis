@@ -1,9 +1,14 @@
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
-function categoriesDataJoin(data) {
+const categoriesContainer = d3.select('#categories')
+const maleBtn = d3.select('#male-btn')
+const femaleBtn = d3.select('#female-btn')
+const resetBtn = d3.select('#reset-btn')
 
-  const categoriesContainer = d3.select('#categories')
+resetBtn.on('click', resetFilter)
+
+function categoriesDataJoin(data) {
 
   const frameScale = d3
     .scaleLinear()
@@ -100,6 +105,12 @@ function categoriesDataJoin(data) {
 
         categorySvg.on('mouseover', (e, d) => categoryMouseover(e, d))
         categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
+        categorySvg.on('click', (e, d) => {
+          categorySvg.attr('opacity', (data) => {
+            return data.category === d.category ? 1 : 0.7
+          })
+        }
+        )
       }
     )
 }
@@ -119,12 +130,16 @@ function categoryMouseout(event, d) {
   d3.select(event.currentTarget).select('.male').text('')
 }
 
+function resetFilter() {
+  categoriesContainer.selectAll('svg').attr('opacity', null)
+}
 
 function parseArtists(d) {
   data = {
     artist: d.Artist,
     birthYear: +d.BirthYear,
-    categories: JSON.parse(d.Categories), deathYear: +d.DeathYear,
+    categories: JSON.parse(d.Categories),
+    deathYear: +d.DeathYear,
     gender: d.Gender,
     nacionality: d.Nacionality,
     totalArtwork: +d.TotalArtwork,

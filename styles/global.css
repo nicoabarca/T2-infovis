@@ -10,7 +10,7 @@
 
 body {
     background-color: var(--greenmarine);
-    color: whitesmoke;
+    color: black;
     margin: 0;
     display: flex;
     place-items: center;

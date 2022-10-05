@@ -2,11 +2,20 @@ h1 {
     margin-top: 5vh;
 }
 
+button {
+    margin: 5px;
+}
+
 
 #categories {
     display: flex;
     flex-wrap: wrap;
     place-items: center;
+}
+
+#buttons {
+    display: flex;
+    flex-wrap: wrap;
 }
 
 .category {
