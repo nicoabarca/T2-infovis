@@ -1,56 +1,72 @@
-const WIDTH = 800;
-const HEIGHT = 400;
-const MARGIN = {
-  top: 70,
-  bottom: 70,
-  right: 30,
-  left: 70, // se agranda este margen para asegurar que se vean los números
-};
-
-const categoriesContainer = d3.select('#categories')
-  .append('svg')
-  .attr('height', HEIGHT)
-  .attr('width', WIDTH)
-
+const CATEGORY_WIDTH = 200
+const CATEGORY_HEIGHT = 270
 
 function categoriesDataJoin(data) {
 
-  const xScale = d3
-    .scaleLinear()
-    .domain([...data.keys()])
-    .rangeRound([0, WIDTH])
+  const categoriesContainer = d3.select('#categories')
 
-  const frameScale = d3
+  const frameWidthScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.artist)])
+    .range([CATEGORY_WIDTH - 110, CATEGORY_WIDTH - 10])
+
+  const frameHeightScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.artist)])
+    .range([140, CATEGORY_HEIGHT - 30])
+
+  const paspartuWidthScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.artwork)])
-    .range([100, 200])
+    .range([70, CATEGORY_WIDTH - 40])
+
+  const paspartuHeightScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.artwork)])
+    .range([120, CATEGORY_HEIGHT - 60])
 
 
   // Data join
   const enterAndUpdate = categoriesContainer
-    .selectAll('g')
+    .selectAll('svg')
     .data(data, d => d.category)
     .join(
       enter => {
-        const group = enter.append('g')
+        const categorySvg = enter.append('svg')
 
+        categorySvg
+          .attr('class', 'category')
+          .attr('width', CATEGORY_WIDTH)
+          .attr('height', CATEGORY_HEIGHT)
+
+        const group = categorySvg.append('g')
+
+        //Category text
+        group.append('text')
+          .attr('x', CATEGORY_WIDTH / 2)
+          .attr('y', 10)
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .attr("text-decoration", "underline")
+          .text(d => d.category)
+
+        //Category frame
         group.append('rect')
-          .attr('fill', 'orange')
-          .attr('width', d => frameScale(d.artwork))
-          .attr('height', d => frameScale(d.artwork) * 1.3)
-          .attr('x', (_, i) => i * 210)
-          .attr('y', `${HEIGHT / 6}`)
+          .attr('x', d => (CATEGORY_WIDTH / 2) - (frameWidthScale(d.artist) / 2))
+          .attr('y', d => (CATEGORY_HEIGHT / 2) - (frameHeightScale(d.artist) / 2) + 10)
+          .attr('width', d => frameWidthScale(d.artist))
+          .attr('height', d => frameHeightScale(d.artist))
+          .attr('fill', 'red')
 
-        //group.append('rect')
-        //  .attr('fill', 'red')
-        //  .attr('width', '10px')
-        //  .attr('height', '10px')
-        //  .attr('x', (_, i) => i * 100)
-        //  .attr('y', `${HEIGHT / 2}`)
-
+        //Category paspartu
+        group.append('rect')
+          .attr('fill', 'white')
+          .attr('x', d => (CATEGORY_WIDTH / 2) - (paspartuWidthScale(d.artwork) / 2))
+          .attr('y', d => (CATEGORY_HEIGHT / 2) - (paspartuHeightScale(d.artwork) / 2) + 10)
+          .attr('width', d => paspartuWidthScale(d.artwork))
+          .attr('height', d => paspartuHeightScale(d.artwork))
       }
     )
-
 }
 
 function parseArtists(d) {

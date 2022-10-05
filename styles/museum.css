@@ -5,6 +5,12 @@ h1 {
 
 #categories {
     display: flex;
+    flex-wrap: wrap;
+    place-items: center;
+}
+
+.category {
+    margin: 15px;
 }
 
 
