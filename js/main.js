@@ -1,5 +1,5 @@
-const WIDTH = 1000;
-const HEIGHT = 500;
+const WIDTH = 800;
+const HEIGHT = 400;
 const MARGIN = {
   top: 70,
   bottom: 70,
@@ -9,15 +9,22 @@ const MARGIN = {
 
 const categoriesContainer = d3.select('#categories')
   .append('svg')
-  //.attr('viewBox', `0 0 ${100} ${100}`)
   .attr('height', HEIGHT)
   .attr('width', WIDTH)
 
 
 function categoriesDataJoin(data) {
-  // Define scales
-  const categoryArtistScale = d3.scaleBand()
-    
+
+  const xScale = d3
+    .scaleLinear()
+    .domain([...data.keys()])
+    .rangeRound([0, WIDTH])
+
+  const frameScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.artwork)])
+    .range([100, 200])
+
 
   // Data join
   const enterAndUpdate = categoriesContainer
@@ -29,19 +36,17 @@ function categoriesDataJoin(data) {
 
         group.append('rect')
           .attr('fill', 'orange')
-          .attr('width', (d) => {
-            return d.artist
-          })
-          .attr('height', '20px')
-          .attr('x', (_, i) => i * 100)
-          .attr('y', `${HEIGHT / 2}`)
+          .attr('width', d => frameScale(d.artwork))
+          .attr('height', d => frameScale(d.artwork) * 1.3)
+          .attr('x', (_, i) => i * 210)
+          .attr('y', `${HEIGHT / 6}`)
 
-        group.append('rect')
-          .attr('fill', 'red')
-          .attr('width', '10px')
-          .attr('height', '10px')
-          .attr('x', (_, i) => i * 100)
-          .attr('y', `${HEIGHT / 2}`)
+        //group.append('rect')
+        //  .attr('fill', 'red')
+        //  .attr('width', '10px')
+        //  .attr('height', '10px')
+        //  .attr('x', (_, i) => i * 100)
+        //  .attr('y', `${HEIGHT / 2}`)
 
       }
     )
@@ -72,7 +77,6 @@ function parseCategory(d) {
     male: +d.Male,
     female: +d.Female
   }
-
   console.log(data)
   return data
 }

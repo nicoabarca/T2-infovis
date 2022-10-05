@@ -1,3 +1,8 @@
+h1 {
+    margin-top: 5vh;
+}
+
+
 #categories {
     display: flex;
 }
