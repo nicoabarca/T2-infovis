@@ -1,8 +1,18 @@
+const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/'
+const CATEGORY_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/CategoryProcessed.csv'
+const ARTISTS_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/face46bb769c88a3e36ef3e7287eebd8c1b64773/ArtistProcessed.csv'
+
+d3.csv(CATEGORY_URL, parseCategory).then(data => {
+  categoryFinalData = JSON.parse(JSON.stringify(data))
+  categoriesDataJoin(categoryFinalData)
+})
+
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
 const artistsContainer = d3.select('#artists')
+
 const maleBtn = d3.select('#male-btn')
 const femaleBtn = d3.select('#female-btn')
 const resetBtn = d3.select('#reset-btn')
@@ -186,19 +196,3 @@ function parseCategory(d) {
   console.log(data)
   return data
 }
-
-function main() {
-  const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/'
-  const CATEGORY_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/CategoryProcessed.csv'
-  const ARTISTS_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/face46bb769c88a3e36ef3e7287eebd8c1b64773/ArtistProcessed.csv'
-
-
-  d3.csv(CATEGORY_URL, parseCategory).then(data => {
-    categoryFinalData = JSON.parse(JSON.stringify(data))
-    categoriesDataJoin(categoryFinalData)
-  })
-
-  d3.csv(ARTISTS_URL, parseArtists)
-}
-
-main()
