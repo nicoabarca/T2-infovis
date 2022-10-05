@@ -7,11 +7,15 @@ d3.csv(CATEGORY_URL, parseCategory).then(data => {
   categoriesDataJoin(categoryFinalData)
 })
 
+d3.csv(ARTISTS_URL, parseArtists).then(data => {
+  artistsFinalData = JSON.parse(JSON.stringify(data))
+})
+
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
-const artistsContainer = d3.select('#artists')
+const artistsContainer = d3.select('#artists').append('svg')
 
 const maleBtn = d3.select('#male-btn')
 const femaleBtn = d3.select('#female-btn')
@@ -120,9 +124,10 @@ function categoriesDataJoin(data) {
         categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
 
         categorySvg.on('click', (_, d) => {
-          categorySvg.attr('opacity', (data) => {
-            return data.category === d.category ? 1 : 0.7
-          })
+          // Update Artists
+          updateArtists(d.category)
+          // Highlight category
+          categorySvg.attr('opacity', (data) => data.category === d.category ? 1 : 0.7)
         }
         )
       }
@@ -130,16 +135,46 @@ function categoriesDataJoin(data) {
 }
 
 //TODO
-function artistsDataJoin(data, selectedCategory) {
-  const artistsData = data.filter(d => d.category === selectedCategory)
-  console.log(artistsData)
+function updateArtists(selectedCategory) {
+  const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random())
+  const selectedArtists = filteredArtists.slice(0, 100)
+  artistsDataJoin(selectedArtists, selectedCategory)
+
+}
+
+function artistsDataJoin(data, category) {
+
+  const categoryColor = d3
+    .scaleOrdinal()
+    .domain(categoryFinalData.map(d => d.category))
+    .range(d3.schemeSet2)
+
+  const branchScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.age)])
+    .range([0, 20])
+
   artistsContainer
+    //.append('svg')
     .selectAll('g')
-    .data(array)
+    .data(data, d => d.artist)
     .join(
       enter => {
         const artistGroup = enter.append('g')
 
+        artistGroup.append('rect')
+          .attr('width', '2px')
+          .attr('height', d => branchScale(d.age))
+          .attr('x', (_, i) => i * 5)
+          // PARA DEFINIR EL Y OCUPAR MODULO o PARTE ENTERA PARA LA GRID
+          .attr('y', 50)
+          .attr('fill', d => categoryColor(category))
+      },
+      update => {
+        update
+      },
+      exit => {
+        exit.remove()
       }
     )
 }
@@ -161,6 +196,8 @@ function categoryMouseout(event, d) {
 
 function resetFilter() {
   categoriesContainer.selectAll('svg').attr('opacity', null)
+  artistsContainer.selectAll('g').remove()
+  //artistsDataJoin([], '')
 }
 
 function parseArtists(d) {
@@ -181,7 +218,7 @@ function parseArtists(d) {
   else {
     data['age'] = data['deathYear'] - data['birthYear']
   }
-
+  //console.log(data)
   return data
 }
 
@@ -193,6 +230,5 @@ function parseCategory(d) {
     male: +d.Male,
     female: +d.Female
   }
-  console.log(data)
   return data
 }
