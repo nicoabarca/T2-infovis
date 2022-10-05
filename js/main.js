@@ -90,7 +90,6 @@ function categoriesDataJoin(data) {
           .attr('y', 100)
           .style("dominant-baseline", "middle")
           .style("text-anchor", "middle")
-          .text('')
 
         categorySvg.append('text')
           .attr('class', 'male')
@@ -98,7 +97,6 @@ function categoriesDataJoin(data) {
           .attr('y', 235)
           .style("dominant-baseline", "middle")
           .style("text-anchor", "middle")
-          .text('')
 
         categorySvg.on('mouseover', (e, d) => categoryMouseover(e, d))
         categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
@@ -129,7 +127,7 @@ function parseArtists(d) {
     categories: JSON.parse(d.Categories), deathYear: +d.DeathYear,
     gender: d.Gender,
     nacionality: d.Nacionality,
-    totalArtwork: d.TotalArtwork,
+    totalArtwork: +d.TotalArtwork,
     age: +this.deathYear - +this.birthYear
   }
 
@@ -140,6 +138,7 @@ function parseArtists(d) {
     data['age'] = data['deathYear'] - data['birthYear']
   }
 
+  console.log(data)
   return data
 }
 
@@ -153,13 +152,6 @@ function parseCategory(d) {
   }
   console.log(data)
   return data
-}
-
-function calculateAge(birthYear, deathYear) {
-  if (deathYear === -1) {
-    return new Date().getFullYear() - birthYear
-  }
-  return deathYear - birthYear
 }
 
 function main() {
