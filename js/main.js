@@ -11,11 +11,16 @@ d3.csv(ARTISTS_URL, parseArtists).then(data => {
   artistsFinalData = JSON.parse(JSON.stringify(data))
 })
 
+let highlightedCategory = null
+
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
-const artistsContainer = d3.select('#artists').append('svg')
+
+// 10 rows of height 200 and width 1600 each row
+const artistsContainer = d3.select('#artists').append('svg').attr('width', 1600).attr('height', '2000')
+
 
 const maleBtn = d3.select('#male-btn')
 const femaleBtn = d3.select('#female-btn')
@@ -134,11 +139,13 @@ function categoriesDataJoin(data) {
     )
 }
 
-//TODO
 function updateArtists(selectedCategory) {
-  const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random())
-  const selectedArtists = filteredArtists.slice(0, 100)
-  artistsDataJoin(selectedArtists, selectedCategory)
+  if (selectedCategory != highlightedCategory) {
+    highlightedCategory = selectedCategory
+    const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random())
+    const selectedArtists = filteredArtists.slice(0, 100)
+    artistsDataJoin(selectedArtists, selectedCategory)
+  }
 
 }
 
@@ -152,10 +159,14 @@ function artistsDataJoin(data, category) {
   const branchScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.age)])
-    .range([0, 20])
+    .range([50, 150])
 
-  artistsContainer
-    //.append('svg')
+  const circleScale = d3
+    .scaleSqrt()
+    .domain([0, d3.max(data, d => d.categories[`${category}`])])
+    .range([20, 40])
+
+  const enterAndUpdate = artistsContainer
     .selectAll('g')
     .data(data, d => d.artist)
     .join(
@@ -163,12 +174,24 @@ function artistsDataJoin(data, category) {
         const artistGroup = enter.append('g')
 
         artistGroup.append('rect')
-          .attr('width', '2px')
+          .attr('width', '10px')
           .attr('height', d => branchScale(d.age))
-          .attr('x', (_, i) => i * 5)
-          // PARA DEFINIR EL Y OCUPAR MODULO o PARTE ENTERA PARA LA GRID
-          .attr('y', 50)
-          .attr('fill', d => categoryColor(category))
+          .attr('x', (_, i) => 80 + (i % 10) * 160)
+          .attr('y', (_, i) => 30 + Math.trunc(i / 10) * 270)
+
+        artistGroup.append('circle')
+          .attr('r', d => circleScale(d.categories[`${category}`]))
+          .attr('cx', (_, i) => 85 + (i % 10) * 160)
+          .attr('cy', (_, i) => 30 + Math.trunc(i / 10) * 270)
+          .attr('fill', categoryColor(category))
+
+        artistGroup.append('text')
+          .attr('x', (_, i) => 80 + (i % 10) * 160)
+          .attr('y', (d, i) => 40 + Math.trunc(i / 10) * 270 + branchScale(d.age))
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .text(d => `${d.artist.slice(0, 20)}...`)
+
       },
       update => {
         update
@@ -177,6 +200,7 @@ function artistsDataJoin(data, category) {
         exit.remove()
       }
     )
+
 }
 
 function categoryMouseover(event, d) {
@@ -197,7 +221,6 @@ function categoryMouseout(event, d) {
 function resetFilter() {
   categoriesContainer.selectAll('svg').attr('opacity', null)
   artistsContainer.selectAll('g').remove()
-  //artistsDataJoin([], '')
 }
 
 function parseArtists(d) {
