@@ -39,7 +39,6 @@ function categoriesDataJoin(data) {
     .range(d3.schemeSet2)
 
   // Data join
-  //const enterAndUpdate = 
   categoriesContainer
     .selectAll('svg')
     .data(data, d => d.category)
@@ -143,6 +142,15 @@ const artistsContainer = d3.select('#artists').append('svg')
   .attr('width', 1200)
   .attr('height', 2200)
 
+const artistTooltip = d3.select('#artists').append('div')
+  .style("position", "absolute")
+  .style("visibility", "hidden")
+  .style("background-color", "white")
+  .style("border", "solid")
+  .style("border-width", "1px")
+  .style("border-radius", "5px")
+  .style("padding", "10px")
+
 function artistsDataJoin(data) {
 
   const categoryColor = d3
@@ -181,15 +189,6 @@ function artistsDataJoin(data) {
       enter => {
         const artistGroup = enter.append('g')
 
-        //Invisible rect
-        artistGroup.append('rect')
-          .attr('stroke', 'black')
-          .attr('fill', 'rgba(0, 0, 0, 0)')
-          .attr('width', 100)
-          .attr('height', 200)
-          .attr('x', (_, i) => (i % 10) * 120)
-          .attr('y', (_, i) => (Math.trunc(i / 10) * 220))
-
         //Artist name
         artistGroup.append('text')
           .attr('class', 'artist-name')
@@ -224,7 +223,7 @@ function artistsDataJoin(data) {
           .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
           .attr('fill', categoryColor(highlightedCategory))
 
-        //// Death Leaf
+        // Death Leaf
         artistGroup.append('rect')
           .attr('class', 'death-leaf')
           .attr('x', (_, i) => 50 + (i % 10) * 120)
@@ -236,7 +235,7 @@ function artistsDataJoin(data) {
           .attr('width', 30)
           .attr('height', 5)
 
-        //// Alive Leaf
+        // Alive Leaf
         artistGroup.append('ellipse')
           .attr('class', 'alive-leaf')
           .attr('cx', (_, i) => 70 + (i % 10) * 120)
@@ -247,38 +246,75 @@ function artistsDataJoin(data) {
           .duration(1000)
           .attr('rx', 20)
           .attr('ry', 5)
+
+        //Invisible rect
+        artistGroup.append('rect')
+          .attr('fill', 'rgba(0, 0, 0, 0)')
+          .attr('width', 100)
+          .attr('height', 200)
+          .attr('x', (_, i) => (i % 10) * 120)
+          .attr('y', (_, i) => (Math.trunc(i / 10) * 220))
+
+        artistGroup
+          .on('click', (_, d) => {
+            artistGroup.attr('opacity', (data) => data.artist === d.artist ? 1 : 0.7)
+          })
+          .on('mouseout', (_, d) => {
+            artistGroup.attr('opacity', null)
+          })
       },
       update => update,
       exit => {
         exit.selectAll('.branch')
           .transition('remove-branch')
-          .duration(200)
+          .duration(100)
           .attr('height', 0)
 
         exit.selectAll('.flower')
           .transition('remove-flower')
-          .delay(200)
-          .duration(200)
+          .delay(100)
+          .duration(100)
           .attr('r', 0)
 
         exit.selectAll('.alive-leaf')
           .transition('remove-alive-leaf')
-          .duration(200)
+          .duration(100)
           .attr('rx', 0)
           .attr('rx', 0)
-          
-          exit.selectAll('.death-leaf')
+
+        exit.selectAll('.death-leaf')
           .transition('remove-death-leaf')
-          .duration(200)
+          .duration(100)
           .attr('width', 0)
 
         exit
-        .transition('exit')
-        .delay(500)
-        .duration(500)
-        .remove()
+          .transition('exit')
+          .delay(200)
+          .duration(100)
+          .remove()
       }
     )
+
+  d3.select('#male-btn').on('click', () => { maleFilter(data) })
+
+  d3.select('#female-btn').on('click', () => { femaleFilter(data) })
+
+  d3.select("#order").on("change", (event) => {
+    const value = event.target.value;
+    console.log(value)
+
+    const copy = JSON.parse(JSON.stringify(data));
+
+    if (value == 'alphabetically') {
+      copy.sort((a, b) => a.artist.localeCompare(b.artist));
+      console.log(copy)
+    }
+    if (value == 'age') {
+      copy.sort((a, b) => a.age - b.age);
+      console.log(copy)
+    }
+    artistsDataJoin(copy);
+  })
 }
 
 function categoryMouseover(event, d) {
@@ -297,7 +333,15 @@ function categoryMouseout(event, d) {
 }
 
 function femaleFilter(data) {
-  
+  const dataCopy = JSON.parse(JSON.stringify(data))
+  const femaleArtists = dataCopy.filter(d => d.gender === 'Female')
+  artistsDataJoin(femaleArtists)
+}
+
+function maleFilter(data) {
+  const dataCopy = JSON.parse(JSON.stringify(data))
+  const maleArtists = dataCopy.filter(d => d.gender === 'Male')
+  artistsDataJoin(maleArtists)
 }
 
 function resetFilter() {
