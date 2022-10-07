@@ -148,10 +148,10 @@ const artistTooltip = d3.select('#artists').append('div')
   .style("position", "absolute")
   .style("visibility", "hidden")
   .style("background-color", "white")
-  .style("border", "solid")
-  .style("border-width", "1px")
+  .style("border", "1px solid black")
   .style("border-radius", "5px")
-  .style("padding", "10px")
+  .style("padding", "5px")
+  .style('font-size', '10px')
 
 function artistsDataJoin(data) {
 
@@ -178,7 +178,7 @@ function artistsDataJoin(data) {
     return artistDeathYear === -1 ? 'visible' : 'hidden'
   }
 
-  const enterAndUpdate = artistsContainer
+  artistsContainer
     .selectAll('g')
     .data(data, d => d.artist)
     .join(
@@ -189,8 +189,8 @@ function artistsDataJoin(data) {
         artistGroup.append('text')
           .attr('class', 'artist-name')
           .attr('font-size', 14)
-          .attr('x', (_, i) => 50 + (i % 10) * 120) // 50 is middle of invisible rect
-          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) // 190 is just above bottom line of invisible rect
+          .attr('x', (_, i) => 50 + (i % 10) * 120)
+          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) 
           .style("dominant-baseline", "middle")
           .style("text-anchor", "middle")
           .text(d => `${d.artist.slice(0, 10)}...`)
@@ -198,7 +198,7 @@ function artistsDataJoin(data) {
         // Branch
         artistGroup.append('rect')
           .attr('class', 'branch')
-          .attr('x', (_, i) => 45 + (i % 10) * 120) // 45 because width is 10
+          .attr('x', (_, i) => 45 + (i % 10) * 120) 
           .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)))
           .transition('branch')
           .delay(1000)
@@ -243,20 +243,26 @@ function artistsDataJoin(data) {
           .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
           .attr('fill', categoryColor(highlightedCategory))
 
-
         artistGroup
           .on('mouseover', (_, d) => {
             artistGroup.attr('opacity', (data) => data.artist === d.artist ? 1 : 0.7)
             artistTooltip.style('visibility', 'visible')
           })
-          //  .on('mousemove', (event, d) => {
-          //    artistTooltip
-          //      .style('top', `${event.pageY + 5}px`)
-          //      .style('left', `${event.pageX - 50}px`)
-          //  })
-          .on('mouseout', (_, d) => {
+          .on('mousemove', (event, d) => {
+            artistTooltip
+              .style('top', `${event.pageY - 20}px`)
+              .style('left', `${event.pageX + 50}px`)
+              .html(`
+              <p>Name: ${d.artist}<p/>
+              <p>Gender: ${d.gender}<p/>
+              <p>Nacionality: ${d.nacionality}<p/>
+              <p>Birth Year: ${d.birthYear}<p/>
+              <p>Age: ${d.age}<p/>
+              `)
+          })
+          .on('mouseout', () => {
             artistGroup.attr('opacity', null)
-            artistTooltip.attr('visibility', 'hidden')
+            artistTooltip.style('visibility', 'hidden')
           })
       },
       update => {
