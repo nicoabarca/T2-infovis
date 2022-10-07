@@ -1,13 +1,20 @@
+const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/'
+const CATEGORY_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/CategoryProcessed.csv'
+const ARTISTS_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/face46bb769c88a3e36ef3e7287eebd8c1b64773/ArtistProcessed.csv'
+
+d3.csv(CATEGORY_URL, parseCategory).then(data => {
+  categoryFinalData = JSON.parse(JSON.stringify(data))
+  categoriesDataJoin(categoryFinalData)
+})
+
+d3.csv(ARTISTS_URL, parseArtists).then(data => {
+  artistsFinalData = JSON.parse(JSON.stringify(data))
+})
+
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
-const artistsContainer = d3.select('#artists')
-const maleBtn = d3.select('#male-btn')
-const femaleBtn = d3.select('#female-btn')
-const resetBtn = d3.select('#reset-btn')
-
-resetBtn.on('click', resetFilter)
 
 function categoriesDataJoin(data) {
 
@@ -32,7 +39,6 @@ function categoriesDataJoin(data) {
     .range(d3.schemeSet2)
 
   // Data join
-  //const enterAndUpdate = 
   categoriesContainer
     .selectAll('svg')
     .data(data, d => d.category)
@@ -110,28 +116,205 @@ function categoriesDataJoin(data) {
         categorySvg.on('mouseout', (e, _) => categoryMouseout(e, _))
 
         categorySvg.on('click', (_, d) => {
-          categorySvg.attr('opacity', (data) => {
-            return data.category === d.category ? 1 : 0.7
-          })
+          // Update Artists
+          updateArtists(d.category)
+          // Highlight category
+          categorySvg.attr('opacity', (data) => data.category === d.category ? 1 : 0.7)
         }
         )
       }
     )
+  d3.select('#reset-btn').on('click', resetFilter)
 }
 
-//TODO
-function artistsDataJoin(data, selectedCategory) {
-  const artistsData = data.filter(d => d.category === selectedCategory)
-  console.log(artistsData)
-  artistsContainer
+
+function updateArtists(selectedCategory) {
+  if (selectedCategory != highlightedCategory) {
+    highlightedCategory = selectedCategory
+    const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random()).slice(0, 100)
+    artistsDataJoin(filteredArtists)
+  }
+}
+
+let highlightedCategory = null
+
+const artistsContainer = d3.select('#artists').append('svg')
+  .attr('width', 1200)
+  .attr('height', 2200)
+
+const artistTooltip = d3.select('#artists').append('div')
+  .style("position", "absolute")
+  .style("visibility", "hidden")
+  .style("background-color", "white")
+  .style("border", "solid")
+  .style("border-width", "1px")
+  .style("border-radius", "5px")
+  .style("padding", "10px")
+
+function artistsDataJoin(data) {
+
+  const categoryColor = d3
+    .scaleOrdinal()
+    .domain(categoryFinalData.map(d => d.category))
+    .range(d3.schemeSet2)
+
+  const branchScale = d3
+    .scaleLinear()
+    .domain([0, d3.max(data, d => d.age)])
+    .range([50, 100])
+
+  const circleScale = d3
+    .scaleSqrt()
+    .domain([0, d3.max(data, d => d.categories[`${highlightedCategory}`])])
+    .range([20, 40])
+
+  const showDeathLeaf = (artistDeathYear) => {
+    if (artistDeathYear === -1) {
+      return 'hidden'
+    }
+    return 'visible'
+  }
+
+  const showAliveLeaf = (artistDeathYear) => {
+    if (artistDeathYear === -1) {
+      return 'visible'
+    }
+    return 'hidden'
+  }
+
+  const enterAndUpdate = artistsContainer
     .selectAll('g')
-    .data(array)
+    .data(data, d => d.artist)
     .join(
       enter => {
         const artistGroup = enter.append('g')
 
+        //Artist name
+        artistGroup.append('text')
+          .attr('class', 'artist-name')
+          .attr('font-size', 14)
+          .attr('x', (_, i) => 50 + (i % 10) * 120) // 50 is middle of invisible rect
+          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) // 190 is just above bottom line of invisible rect
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .text(d => `${d.artist.slice(0, 10)}...`)
+
+        // Branch
+        artistGroup.append('rect')
+          .attr('class', 'branch')
+          .attr('x', (_, i) => 45 + (i % 10) * 120) // 45 because width is 10
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)))
+          .transition('branch')
+          .delay(1000)
+          .duration(500)
+          .attr('width', '10px')
+          .attr('height', d => branchScale(d.age))
+
+        // Flower
+        artistGroup.append('circle')
+          .attr('class', 'flower')
+          .attr('cx', (_, i) => 50 + (i % 10) * 120)
+          .attr('cy', (d, i) => (
+            Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)) - circleScale(d.categories[`${highlightedCategory}`]
+            )
+          )
+          .transition('flower')
+          .duration(500)
+          .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
+          .attr('fill', categoryColor(highlightedCategory))
+
+        // Death Leaf
+        artistGroup.append('rect')
+          .attr('class', 'death-leaf')
+          .attr('x', (_, i) => 50 + (i % 10) * 120)
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
+          .attr('visibility', d => showDeathLeaf(d.deathYear))
+          .transition('death-leaf')
+          .delay(1000)
+          .duration(1000)
+          .attr('width', 30)
+          .attr('height', 5)
+
+        // Alive Leaf
+        artistGroup.append('ellipse')
+          .attr('class', 'alive-leaf')
+          .attr('cx', (_, i) => 70 + (i % 10) * 120)
+          .attr('cy', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
+          .attr('visibility', d => showAliveLeaf(d.deathYear))
+          .transition('alive-leaf')
+          .delay(1000)
+          .duration(1000)
+          .attr('rx', 20)
+          .attr('ry', 5)
+
+        //Invisible rect
+        artistGroup.append('rect')
+          .attr('fill', 'rgba(0, 0, 0, 0)')
+          .attr('width', 100)
+          .attr('height', 200)
+          .attr('x', (_, i) => (i % 10) * 120)
+          .attr('y', (_, i) => (Math.trunc(i / 10) * 220))
+
+        artistGroup
+          .on('click', (_, d) => {
+            artistGroup.attr('opacity', (data) => data.artist === d.artist ? 1 : 0.7)
+          })
+          .on('mouseout', (_, d) => {
+            artistGroup.attr('opacity', null)
+          })
+      },
+      update => update,
+      exit => {
+        exit.selectAll('.branch')
+          .transition('remove-branch')
+          .duration(100)
+          .attr('height', 0)
+
+        exit.selectAll('.flower')
+          .transition('remove-flower')
+          .delay(100)
+          .duration(100)
+          .attr('r', 0)
+
+        exit.selectAll('.alive-leaf')
+          .transition('remove-alive-leaf')
+          .duration(100)
+          .attr('rx', 0)
+          .attr('rx', 0)
+
+        exit.selectAll('.death-leaf')
+          .transition('remove-death-leaf')
+          .duration(100)
+          .attr('width', 0)
+
+        exit
+          .transition('exit')
+          .delay(200)
+          .duration(100)
+          .remove()
       }
     )
+
+  d3.select('#male-btn').on('click', () => { maleFilter(data) })
+
+  d3.select('#female-btn').on('click', () => { femaleFilter(data) })
+
+  d3.select("#order").on("change", (event) => {
+    const value = event.target.value;
+    console.log(value)
+
+    const copy = JSON.parse(JSON.stringify(data));
+
+    if (value == 'alphabetically') {
+      copy.sort((a, b) => a.artist.localeCompare(b.artist));
+      console.log(copy)
+    }
+    if (value == 'age') {
+      copy.sort((a, b) => a.age - b.age);
+      console.log(copy)
+    }
+    artistsDataJoin(copy);
+  })
 }
 
 function categoryMouseover(event, d) {
@@ -149,8 +332,22 @@ function categoryMouseout(event, d) {
   d3.select(event.currentTarget).select('.male').text('')
 }
 
+function femaleFilter(data) {
+  const dataCopy = JSON.parse(JSON.stringify(data))
+  const femaleArtists = dataCopy.filter(d => d.gender === 'Female')
+  artistsDataJoin(femaleArtists)
+}
+
+function maleFilter(data) {
+  const dataCopy = JSON.parse(JSON.stringify(data))
+  const maleArtists = dataCopy.filter(d => d.gender === 'Male')
+  artistsDataJoin(maleArtists)
+}
+
 function resetFilter() {
+  highlightedCategory = null
   categoriesContainer.selectAll('svg').attr('opacity', null)
+  artistsDataJoin([])
 }
 
 function parseArtists(d) {
@@ -171,7 +368,6 @@ function parseArtists(d) {
   else {
     data['age'] = data['deathYear'] - data['birthYear']
   }
-
   return data
 }
 
@@ -183,22 +379,5 @@ function parseCategory(d) {
     male: +d.Male,
     female: +d.Female
   }
-  console.log(data)
   return data
 }
-
-function main() {
-  const BASE_URL = 'https://gist.githubusercontent.com/Hernan4444/'
-  const CATEGORY_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/d16677e2603373c8479c6535df813a731025fd4a/CategoryProcessed.csv'
-  const ARTISTS_URL = BASE_URL + '16a8735acdb18fabb685810fc4619c73/raw/face46bb769c88a3e36ef3e7287eebd8c1b64773/ArtistProcessed.csv'
-
-
-  d3.csv(CATEGORY_URL, parseCategory).then(data => {
-    categoryFinalData = JSON.parse(JSON.stringify(data))
-    categoriesDataJoin(categoryFinalData)
-  })
-
-  d3.csv(ARTISTS_URL, parseArtists)
-}
-
-main()
