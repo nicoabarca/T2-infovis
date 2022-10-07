@@ -166,6 +166,20 @@ function artistsDataJoin(data, category) {
     .domain([0, d3.max(data, d => d.categories[`${category}`])])
     .range([20, 40])
 
+  const showDeathLeaf = (artistDeathYear) => {
+    if (artistDeathYear === -1) {
+      return 'hidden'
+    }
+    return 'visible'
+  }
+
+  const showAliveLeaf = (artistDeathYear) => {
+    if (artistDeathYear === -1) {
+      return 'visible'
+    }
+    return 'hidden'
+  }
+
   const enterAndUpdate = artistsContainer
     .selectAll('g')
     .data(data, d => d.artist)
@@ -173,33 +187,74 @@ function artistsDataJoin(data, category) {
       enter => {
         const artistGroup = enter.append('g')
 
+        // Branch
         artistGroup.append('rect')
+          .attr('class', 'branch')
+          .attr('x', (_, i) => 80 + (i % 10) * 160)
+          .attr('y', (_, i) => 30 + (Math.trunc(i / 10) * 270))
+          .transition('branch')
+          .duration(1000)
           .attr('width', '10px')
           .attr('height', d => branchScale(d.age))
-          .attr('x', (_, i) => 80 + (i % 10) * 160)
-          .attr('y', (_, i) => 30 + Math.trunc(i / 10) * 270)
 
+        // Death Leaf
+        artistGroup.append('rect')
+          .attr('x', (_, i) => 80 + (i % 10) * 160)
+          .attr('y', (_, i) => 80 + Math.trunc(i / 10) * 270)
+          .attr('visibility', d => showDeathLeaf(d.deathYear))
+          .transition('death-leaf')
+          .delay(1000)
+          .duration(1000)
+          .attr('width', '30px')
+          .attr('height', '5px')
+
+        // Alive Leaf
+        artistGroup.append('ellipse')
+          .attr('cx', (_, i) => 101 + (i % 10) * 160)
+          .attr('cy', (_, i) => 80 + Math.trunc(i / 10) * 270)
+          .attr('visibility', d => showAliveLeaf(d.deathYear))
+          .transition('alive-leaf')
+          .delay(1000)
+          .duration(1000)
+          .attr('rx', 20)
+          .attr('ry', 5)
+
+        // Flower
         artistGroup.append('circle')
-          .attr('r', d => circleScale(d.categories[`${category}`]))
           .attr('cx', (_, i) => 85 + (i % 10) * 160)
           .attr('cy', (_, i) => 30 + Math.trunc(i / 10) * 270)
+          .transition('flower')
+          .delay(1000)
+          .duration(500)
+          .attr('r', d => circleScale(d.categories[`${category}`]))
           .attr('fill', categoryColor(category))
 
+        // Artist name
         artistGroup.append('text')
           .attr('x', (_, i) => 80 + (i % 10) * 160)
           .attr('y', (d, i) => 40 + Math.trunc(i / 10) * 270 + branchScale(d.age))
           .style("dominant-baseline", "middle")
           .style("text-anchor", "middle")
-          .text(d => `${d.artist.slice(0, 20)}...`)
+          .text(d => `${d.artist.slice(0, 10)}...`)
 
       },
       update => {
-        update
+        update.selectAll('branch')
+          .attr('x', (_, i) => 80 + (i % 10) * 160)
+          .attr('y', (_, i) => 30 + (Math.trunc(i / 10) * 270))
       },
       exit => {
         exit.remove()
       }
     )
+
+  //enterAndUpdate
+  //  .transition("update")
+  //  .duration(500)
+
+  d3.select('#male-btn').on('click', () => { maleFilter(data)})
+
+  d3.select('#female-btn').on('click', () => { femaleFilter(data) })
 
 }
 
@@ -221,6 +276,17 @@ function categoryMouseout(event, d) {
 function resetFilter() {
   categoriesContainer.selectAll('svg').attr('opacity', null)
   artistsContainer.selectAll('g').remove()
+  highlightedCategory = null
+}
+
+function femaleFilter(data) {
+  const femaleArtists = data.filter(d => d.gender === 'Female')
+  artistsDataJoin(femaleArtists)
+}
+
+function maleFilter(data) {
+  const maleArtists = data.filter(d => d.gender === 'Male')
+  artistsDataJoin(maleArtists)
 }
 
 function parseArtists(d) {
