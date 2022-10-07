@@ -11,22 +11,10 @@ d3.csv(ARTISTS_URL, parseArtists).then(data => {
   artistsFinalData = JSON.parse(JSON.stringify(data))
 })
 
-let highlightedCategory = null
-
 const CATEGORY_WIDTH = 200
 const CATEGORY_HEIGHT = 300
 
 const categoriesContainer = d3.select('#categories')
-
-// 10 rows of height 200 and width 1600 each row
-const artistsContainer = d3.select('#artists').append('svg').attr('width', 1600).attr('height', '2000')
-
-
-const maleBtn = d3.select('#male-btn')
-const femaleBtn = d3.select('#female-btn')
-const resetBtn = d3.select('#reset-btn')
-
-resetBtn.on('click', resetFilter)
 
 function categoriesDataJoin(data) {
 
@@ -137,19 +125,25 @@ function categoriesDataJoin(data) {
         )
       }
     )
+  d3.select('#reset-btn').on('click', resetFilter)
 }
+
 
 function updateArtists(selectedCategory) {
   if (selectedCategory != highlightedCategory) {
     highlightedCategory = selectedCategory
-    const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random())
-    const selectedArtists = filteredArtists.slice(0, 100)
-    artistsDataJoin(selectedArtists, selectedCategory)
+    const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random()).slice(0, 100)
+    artistsDataJoin(filteredArtists)
   }
-
 }
 
-function artistsDataJoin(data, category) {
+let highlightedCategory = null
+
+const artistsContainer = d3.select('#artists').append('svg')
+  .attr('width', 1200)
+  .attr('height', 2200)
+
+function artistsDataJoin(data) {
 
   const categoryColor = d3
     .scaleOrdinal()
@@ -159,11 +153,11 @@ function artistsDataJoin(data, category) {
   const branchScale = d3
     .scaleLinear()
     .domain([0, d3.max(data, d => d.age)])
-    .range([50, 150])
+    .range([50, 100])
 
   const circleScale = d3
     .scaleSqrt()
-    .domain([0, d3.max(data, d => d.categories[`${category}`])])
+    .domain([0, d3.max(data, d => d.categories[`${highlightedCategory}`])])
     .range([20, 40])
 
   const showDeathLeaf = (artistDeathYear) => {
@@ -187,75 +181,104 @@ function artistsDataJoin(data, category) {
       enter => {
         const artistGroup = enter.append('g')
 
+        //Invisible rect
+        artistGroup.append('rect')
+          .attr('stroke', 'black')
+          .attr('fill', 'rgba(0, 0, 0, 0)')
+          .attr('width', 100)
+          .attr('height', 200)
+          .attr('x', (_, i) => (i % 10) * 120)
+          .attr('y', (_, i) => (Math.trunc(i / 10) * 220))
+
+        //Artist name
+        artistGroup.append('text')
+          .attr('class', 'artist-name')
+          .attr('font-size', 14)
+          .attr('x', (_, i) => 50 + (i % 10) * 120) // 50 is middle of invisible rect
+          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) // 190 is just above bottom line of invisible rect
+          .style("dominant-baseline", "middle")
+          .style("text-anchor", "middle")
+          .text(d => `${d.artist.slice(0, 10)}...`)
+
         // Branch
         artistGroup.append('rect')
           .attr('class', 'branch')
-          .attr('x', (_, i) => 80 + (i % 10) * 160)
-          .attr('y', (_, i) => 30 + (Math.trunc(i / 10) * 270))
+          .attr('x', (_, i) => 45 + (i % 10) * 120) // 45 because width is 10
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)))
           .transition('branch')
-          .duration(1000)
+          .delay(1000)
+          .duration(500)
           .attr('width', '10px')
           .attr('height', d => branchScale(d.age))
 
-        // Death Leaf
+        // Flower
+        artistGroup.append('circle')
+          .attr('class', 'flower')
+          .attr('cx', (_, i) => 50 + (i % 10) * 120)
+          .attr('cy', (d, i) => (
+            Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)) - circleScale(d.categories[`${highlightedCategory}`]
+            )
+          )
+          .transition('flower')
+          .duration(500)
+          .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
+          .attr('fill', categoryColor(highlightedCategory))
+
+        //// Death Leaf
         artistGroup.append('rect')
-          .attr('x', (_, i) => 80 + (i % 10) * 160)
-          .attr('y', (_, i) => 80 + Math.trunc(i / 10) * 270)
+          .attr('class', 'death-leaf')
+          .attr('x', (_, i) => 50 + (i % 10) * 120)
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
           .attr('visibility', d => showDeathLeaf(d.deathYear))
           .transition('death-leaf')
           .delay(1000)
           .duration(1000)
-          .attr('width', '30px')
-          .attr('height', '5px')
+          .attr('width', 30)
+          .attr('height', 5)
 
-        // Alive Leaf
+        //// Alive Leaf
         artistGroup.append('ellipse')
-          .attr('cx', (_, i) => 101 + (i % 10) * 160)
-          .attr('cy', (_, i) => 80 + Math.trunc(i / 10) * 270)
+          .attr('class', 'alive-leaf')
+          .attr('cx', (_, i) => 70 + (i % 10) * 120)
+          .attr('cy', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
           .attr('visibility', d => showAliveLeaf(d.deathYear))
           .transition('alive-leaf')
           .delay(1000)
           .duration(1000)
           .attr('rx', 20)
           .attr('ry', 5)
-
-        // Flower
-        artistGroup.append('circle')
-          .attr('cx', (_, i) => 85 + (i % 10) * 160)
-          .attr('cy', (_, i) => 30 + Math.trunc(i / 10) * 270)
-          .transition('flower')
-          .delay(1000)
-          .duration(500)
-          .attr('r', d => circleScale(d.categories[`${category}`]))
-          .attr('fill', categoryColor(category))
-
-        // Artist name
-        artistGroup.append('text')
-          .attr('x', (_, i) => 80 + (i % 10) * 160)
-          .attr('y', (d, i) => 40 + Math.trunc(i / 10) * 270 + branchScale(d.age))
-          .style("dominant-baseline", "middle")
-          .style("text-anchor", "middle")
-          .text(d => `${d.artist.slice(0, 10)}...`)
-
       },
-      update => {
-        update.selectAll('branch')
-          .attr('x', (_, i) => 80 + (i % 10) * 160)
-          .attr('y', (_, i) => 30 + (Math.trunc(i / 10) * 270))
-      },
+      update => update,
       exit => {
-        exit.remove()
+        exit.selectAll('.branch')
+          .transition('remove-branch')
+          .duration(200)
+          .attr('height', 0)
+
+        exit.selectAll('.flower')
+          .transition('remove-flower')
+          .delay(200)
+          .duration(200)
+          .attr('r', 0)
+
+        exit.selectAll('.alive-leaf')
+          .transition('remove-alive-leaf')
+          .duration(200)
+          .attr('rx', 0)
+          .attr('rx', 0)
+          
+          exit.selectAll('.death-leaf')
+          .transition('remove-death-leaf')
+          .duration(200)
+          .attr('width', 0)
+
+        exit
+        .transition('exit')
+        .delay(500)
+        .duration(500)
+        .remove()
       }
     )
-
-  //enterAndUpdate
-  //  .transition("update")
-  //  .duration(500)
-
-  d3.select('#male-btn').on('click', () => { maleFilter(data)})
-
-  d3.select('#female-btn').on('click', () => { femaleFilter(data) })
-
 }
 
 function categoryMouseover(event, d) {
@@ -273,20 +296,14 @@ function categoryMouseout(event, d) {
   d3.select(event.currentTarget).select('.male').text('')
 }
 
-function resetFilter() {
-  categoriesContainer.selectAll('svg').attr('opacity', null)
-  artistsContainer.selectAll('g').remove()
-  highlightedCategory = null
-}
-
 function femaleFilter(data) {
-  const femaleArtists = data.filter(d => d.gender === 'Female')
-  artistsDataJoin(femaleArtists)
+  
 }
 
-function maleFilter(data) {
-  const maleArtists = data.filter(d => d.gender === 'Male')
-  artistsDataJoin(maleArtists)
+function resetFilter() {
+  highlightedCategory = null
+  categoriesContainer.selectAll('svg').attr('opacity', null)
+  artistsDataJoin([])
 }
 
 function parseArtists(d) {
@@ -307,7 +324,6 @@ function parseArtists(d) {
   else {
     data['age'] = data['deathYear'] - data['birthYear']
   }
-  //console.log(data)
   return data
 }
 

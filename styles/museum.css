@@ -18,8 +18,13 @@ button {
     flex-wrap: wrap;
 }
 
+#selection {
+    margin-bottom: 20px;
+}
+
 .category {
     margin: 15px;
 }
+
 
 
