@@ -130,13 +130,15 @@ function categoriesDataJoin(data) {
 
 function updateArtists(selectedCategory) {
   if (selectedCategory != highlightedCategory) {
-    highlightedCategory = selectedCategory
     const filteredArtists = artistsFinalData.filter(a => selectedCategory in a.categories).sort(() => 0.5 - Math.random()).slice(0, 100)
+    highlightedCategory = selectedCategory
+    highlightedArtists = filteredArtists
     artistsDataJoin(filteredArtists)
   }
 }
 
 let highlightedCategory = null
+let highlightedArtists = null
 
 const artistsContainer = d3.select('#artists').append('svg')
   .attr('width', 1200)
@@ -146,10 +148,10 @@ const artistTooltip = d3.select('#artists').append('div')
   .style("position", "absolute")
   .style("visibility", "hidden")
   .style("background-color", "white")
-  .style("border", "solid")
-  .style("border-width", "1px")
+  .style("border", "1px solid black")
   .style("border-radius", "5px")
-  .style("padding", "10px")
+  .style("padding", "5px")
+  .style('font-size', '10px')
 
 function artistsDataJoin(data) {
 
@@ -169,20 +171,14 @@ function artistsDataJoin(data) {
     .range([20, 40])
 
   const showDeathLeaf = (artistDeathYear) => {
-    if (artistDeathYear === -1) {
-      return 'hidden'
-    }
-    return 'visible'
+    return artistDeathYear === -1 ? 'hidden' : 'visible'
   }
 
   const showAliveLeaf = (artistDeathYear) => {
-    if (artistDeathYear === -1) {
-      return 'visible'
-    }
-    return 'hidden'
+    return artistDeathYear === -1 ? 'visible' : 'hidden'
   }
 
-  const enterAndUpdate = artistsContainer
+  artistsContainer
     .selectAll('g')
     .data(data, d => d.artist)
     .join(
@@ -193,8 +189,8 @@ function artistsDataJoin(data) {
         artistGroup.append('text')
           .attr('class', 'artist-name')
           .attr('font-size', 14)
-          .attr('x', (_, i) => 50 + (i % 10) * 120) // 50 is middle of invisible rect
-          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) // 190 is just above bottom line of invisible rect
+          .attr('x', (_, i) => 50 + (i % 10) * 120)
+          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) 
           .style("dominant-baseline", "middle")
           .style("text-anchor", "middle")
           .text(d => `${d.artist.slice(0, 10)}...`)
@@ -202,26 +198,13 @@ function artistsDataJoin(data) {
         // Branch
         artistGroup.append('rect')
           .attr('class', 'branch')
-          .attr('x', (_, i) => 45 + (i % 10) * 120) // 45 because width is 10
+          .attr('x', (_, i) => 45 + (i % 10) * 120) 
           .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)))
           .transition('branch')
           .delay(1000)
           .duration(500)
           .attr('width', '10px')
           .attr('height', d => branchScale(d.age))
-
-        // Flower
-        artistGroup.append('circle')
-          .attr('class', 'flower')
-          .attr('cx', (_, i) => 50 + (i % 10) * 120)
-          .attr('cy', (d, i) => (
-            Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)) - circleScale(d.categories[`${highlightedCategory}`]
-            )
-          )
-          .transition('flower')
-          .duration(500)
-          .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
-          .attr('fill', categoryColor(highlightedCategory))
 
         // Death Leaf
         artistGroup.append('rect')
@@ -247,24 +230,86 @@ function artistsDataJoin(data) {
           .attr('rx', 20)
           .attr('ry', 5)
 
-        //Invisible rect
-        artistGroup.append('rect')
-          .attr('fill', 'rgba(0, 0, 0, 0)')
-          .attr('width', 100)
-          .attr('height', 200)
-          .attr('x', (_, i) => (i % 10) * 120)
-          .attr('y', (_, i) => (Math.trunc(i / 10) * 220))
+        // Flower
+        artistGroup.append('circle')
+          .attr('class', 'flower')
+          .attr('cx', (_, i) => 50 + (i % 10) * 120)
+          .attr('cy', (d, i) => (
+            Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)) - circleScale(d.categories[`${highlightedCategory}`]
+            )
+          )
+          .transition('flower')
+          .duration(500)
+          .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
+          .attr('fill', categoryColor(highlightedCategory))
 
         artistGroup
-          .on('click', (_, d) => {
+          .on('mouseover', (_, d) => {
             artistGroup.attr('opacity', (data) => data.artist === d.artist ? 1 : 0.7)
+            artistTooltip.style('visibility', 'visible')
           })
-          .on('mouseout', (_, d) => {
+          .on('mousemove', (event, d) => {
+            artistTooltip
+              .style('top', `${event.pageY - 20}px`)
+              .style('left', `${event.pageX + 50}px`)
+              .html(`
+              <p>Name: ${d.artist}<p/>
+              <p>Gender: ${d.gender}<p/>
+              <p>Nacionality: ${d.nacionality}<p/>
+              <p>Birth Year: ${d.birthYear}<p/>
+              <p>Age: ${d.age}<p/>
+              `)
+          })
+          .on('mouseout', () => {
             artistGroup.attr('opacity', null)
+            artistTooltip.style('visibility', 'hidden')
           })
       },
-      update => update,
+      update => {
+
+        update.select('.artist-name')
+          .transition('update-name')
+          .duration(500)
+          .attr('x', (_, i) => 50 + (i % 10) * 120) // 50 is middle of invisible rect
+          .attr('y', (_, i) => 190 + Math.trunc(i / 10) * 220) // 190 is just above bottom line of invisible rect
+          .text(d => `${d.artist.slice(0, 10)}...`)
+
+        update.select('.branch')
+          .transition('update-branch')
+          .duration(500)
+          .attr('x', (_, i) => 45 + (i % 10) * 120) // 45 because width is 10
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)))
+          .attr('height', d => branchScale(d.age))
+
+        update.select('.death-leaf')
+          .transition('update-death-leaf')
+          .duration(500)
+          .attr('x', (_, i) => 50 + (i % 10) * 120)
+          .attr('y', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
+
+        update.select('.alive-leaf')
+          .transition('update-alive-leaf')
+          .duration(500)
+          .attr('cx', (_, i) => 70 + (i % 10) * 120)
+          .attr('cy', (d, i) => (Math.trunc(i / 10) * 220) + (220 - branchScale(d.age)))
+
+        update.select('.flower')
+          .transition('update-flower')
+          .duration(500)
+          .attr('cx', (_, i) => 50 + (i % 10) * 120)
+          .attr('cy', (d, i) => (
+            Math.trunc(i / 10) * 220) + (180 - branchScale(d.age)) - circleScale(d.categories[`${highlightedCategory}`]
+            )
+          )
+          .attr('r', d => circleScale(d.categories[`${highlightedCategory}`]))
+          .attr('fill', categoryColor(highlightedCategory))
+      },
       exit => {
+        exit.selectAll('.artist-name')
+          .transition('remove-name')
+          .duration(100)
+          .text('')
+
         exit.selectAll('.branch')
           .transition('remove-branch')
           .duration(100)
@@ -272,7 +317,6 @@ function artistsDataJoin(data) {
 
         exit.selectAll('.flower')
           .transition('remove-flower')
-          .delay(100)
           .duration(100)
           .attr('r', 0)
 
@@ -301,19 +345,19 @@ function artistsDataJoin(data) {
 
   d3.select("#order").on("change", (event) => {
     const value = event.target.value;
-    console.log(value)
-
     const copy = JSON.parse(JSON.stringify(data));
 
-    if (value == 'alphabetically') {
+    if (value === 'alphabetically') {
       copy.sort((a, b) => a.artist.localeCompare(b.artist));
-      console.log(copy)
+      artistsDataJoin(copy);
     }
-    if (value == 'age') {
+    else if (value === 'age') {
       copy.sort((a, b) => a.age - b.age);
-      console.log(copy)
+      artistsDataJoin(copy);
     }
-    artistsDataJoin(copy);
+    else {
+      artistsDataJoin(highlightedArtists);
+    }
   })
 }
 
@@ -332,14 +376,14 @@ function categoryMouseout(event, d) {
   d3.select(event.currentTarget).select('.male').text('')
 }
 
-function femaleFilter(data) {
-  const dataCopy = JSON.parse(JSON.stringify(data))
+function femaleFilter() {
+  const dataCopy = JSON.parse(JSON.stringify(highlightedArtists))
   const femaleArtists = dataCopy.filter(d => d.gender === 'Female')
   artistsDataJoin(femaleArtists)
 }
 
-function maleFilter(data) {
-  const dataCopy = JSON.parse(JSON.stringify(data))
+function maleFilter() {
+  const dataCopy = JSON.parse(JSON.stringify(highlightedArtists))
   const maleArtists = dataCopy.filter(d => d.gender === 'Male')
   artistsDataJoin(maleArtists)
 }
@@ -359,7 +403,6 @@ function parseArtists(d) {
     gender: d.Gender,
     nacionality: d.Nacionality,
     totalArtwork: +d.TotalArtwork,
-    age: +this.deathYear - +this.birthYear
   }
 
   if (data['deathYear'] === -1) {
