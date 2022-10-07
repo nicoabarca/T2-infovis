@@ -1,10 +1,10 @@
 :root {
-    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+    font-family: 'Roboto', Inter, Avenir, Helvetica, Arial, sans-serif;
     --orange: #e27d60;
     --pastelorange: #e8a87c;
     --lightblue: #85dcbb;
     --brushviolet: #c38d9e;
-    --greenmarine: #36a882;
+    --greenmarine: #59e6b7;
 }
 
 
@@ -23,5 +23,5 @@ body {
     display: flex;
     flex-direction: column;
     place-items: center;
-    text-align: center;
+    max-width: 50%;
 }

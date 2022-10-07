@@ -390,6 +390,7 @@ function maleFilter() {
 
 function resetFilter() {
   highlightedCategory = null
+  highlightedArtists = null
   categoriesContainer.selectAll('svg').attr('opacity', null)
   artistsDataJoin([])
 }
